@@ -1,0 +1,35 @@
+
+name: Scarica Qwen3-0.6B
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica e pubblica Qwen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          FILE="Qwen3-0.6B-Q8_0.gguf"
+          BASE="https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main"
+
+          curl -fL --retry 5 "$BASE/$FILE" -o "$FILE"
+
+          echo "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031  $FILE" | sha256sum -c -
+
+          curl -fL --retry 5 "$BASE/LICENSE" -o LICENSE-QWEN.txt
+
+          if gh release view qwen3-0.6b-q8 >/dev/null 2>&1; then
+            gh release upload qwen3-0.6b-q8 "$FILE" LICENSE-QWEN.txt --clobber
+          else
+            gh release create qwen3-0.6b-q8 "$FILE" LICENSE-QWEN.txt \
+              --title "Qwen3-0.6B GGUF Q8_0" \
+              --notes "Official Qwen model mirror. Source: https://huggingface.co/Qwen/Qwen3-0.6B-GGUF. License: Apache-2.0."
+          fi
